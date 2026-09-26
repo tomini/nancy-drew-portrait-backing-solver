@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://tomini.github.io/nancy-drew-portrait-backing-solver/sitemap.xml
