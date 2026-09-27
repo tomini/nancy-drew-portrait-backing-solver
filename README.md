@@ -17,11 +17,11 @@ Click **Junior start** or **Senior start** for your difficulty, then **Solve**. 
 Most people are here because of this. The game can't put the pegs back, so rebuild your current board in the solver:
 
 1. In the game, drag the pegs apart so every line between them is easy to read, and take a screenshot.
-2. Click **Screenshot…** and load your screenshot. (If you clicked **Junior start** or **Senior start** earlier, click **Clear** first to start from an empty board.)
+2. Click **Load…** (or paste with **Ctrl+V**) and load your screenshot. A crop tool opens — drag the box over just the **playable** area (the pegs and lines), not the wooden frame border around them, then **Use crop**. Including the frame border throws off where the solver thinks the pegs are. Use **Recrop…** later to redo it without reloading. (If you clicked **Junior start** or **Senior start** earlier, click **Clear** first to start from an empty board.)
 3. **Add peg**: click each peg on the screenshot.
 4. **Connect**: click two pegs to add a line between them, and repeat for every line. Click the same two again to remove it.
 5. Check the counts in the **Debug / export / import** panel: Junior has 15 pegs and 30 lines, Senior has 18 pegs and 43 lines.
-6. Click **Solve**. Every peg that has to move turns green; pegs that stay grey don't move. Pick a green peg up at its **dashed circle** (where it is now) and drop it at the **green peg at the end of the arrow** (where it should go).
+6. Click **Solve**. Every peg that has to move turns green; pegs that stay grey don't move. For each green peg, find it at its **dashed circle** (where it is now) and drag it, in the game, to the **green peg at the end of the arrow** (where it should go).
 
 Peg numbers are only the order you added them. They don't match anything in the game.
 
@@ -49,7 +49,7 @@ Open `index.html` in a browser. There is no build step and no dependencies.
 
 ## Disclaimer
 
-This is an unofficial fan-made tool. It is not affiliated with, endorsed by or sponsored by HeR Interactive. *Nancy Drew* and *Shadow at the Water's Edge* are trademarks of their respective owners. The solver contains no game assets. Screenshots you load stay in your browser.
+This is an unofficial fan-made tool. It is not affiliated with, endorsed by or sponsored by HeR Interactive. *Nancy Drew* and *Shadow at the Water's Edge* are trademarks of their respective owners. The puzzle frame and backing textures (`assets/`) are extracted from the game and used decoratively; screenshots you load yourself stay in your browser and are never uploaded anywhere.
 
 ## License
 

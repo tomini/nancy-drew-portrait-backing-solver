@@ -26,6 +26,7 @@
   #guide{display:none;position:absolute;inset:0.375rem;overflow:auto;background:rgba(29,22,16,.97);border:1px solid var(--accent);border-radius:0.5rem;padding:0.5rem 0.875rem;font-size:0.8438rem;line-height:1.45;z-index:5}
   #guide.open{display:block}
   #guide h3{margin:0.5rem 0 0.1875rem;font-size:0.875rem;color:var(--accent)}
+  #guide b.k{font-weight:normal;color:#fff;background:#6b4a26;border:1px solid #c9a36a;border-radius:0.25rem;padding:0.05em 0.4em;white-space:nowrap}
   #guide ol{margin:0.125rem 0 0.25rem;padding-left:1.25rem}
   #guide p{margin:0.125rem 0}
   #guide .x{position:sticky;top:0;float:right}
@@ -49,7 +50,9 @@
   .toolbar .right button{padding:0.4rem 0.5rem;flex:none}
   .toolbar .right button{width:100%}
   #status{flex:1;min-height:0;overflow:auto;margin:0.125rem 0 0;font-size:0.75rem;line-height:1.3;color:var(--text)}
-  svg{display:block;width:100%;height:auto;background:#3a2a1a;border:0.1875rem solid #8a6a3c;border-radius:0.25rem;touch-action:none}
+  .boardFrame{position:relative;width:100%;box-sizing:border-box;padding-left:5.2951%;padding-right:5.2517%}
+  .frameOverlay{position:absolute;inset:0;background-image:url('assets/puzzle_frame.webp');background-size:100% 100%;background-repeat:no-repeat;pointer-events:none}
+  svg{display:block;width:100%;height:auto;background:#3a2a1a url('assets/puzzle_playable_crop.webp') center/100% 100% no-repeat;touch-action:none}
   .edge{stroke:var(--wood);stroke-width:4;pointer-events:none}
   .edge.bad{stroke:var(--bad)}
   .edge-in{stroke:#e0b878;stroke-width:1.5;pointer-events:none}
@@ -69,11 +72,11 @@
   .arrow{stroke:var(--ok);stroke-width:2;stroke-dasharray:6 4}
   text{pointer-events:none;font:bold 0.9375rem Georgia,serif;fill:#2a1d10;text-anchor:middle;dominant-baseline:central}
   text.g{fill:var(--ok)}
-  details summary{cursor:pointer;font-weight:bold}
-  #stats{margin:0.5rem 0;font-size:0.875rem}
-  .dbgbody{display:flex;flex-direction:column;height:14.5rem}
+  details summary{cursor:pointer;font-weight:bold;position:relative}
+  #stats{position:absolute;right:0;top:0;font-size:0.75rem;font-weight:normal}
+  .dbgbody{display:flex;flex-direction:column;height:13rem}
   .dbgbody .cols{flex:1;min-height:0}
-  .dbgbody #stats,.dbgbody #io,.dbgbody .row{flex:none}
+  .dbgbody #io,.dbgbody .row{flex:none}
   #dbg .cols>div{display:flex;flex-direction:column;min-height:0}
   #dbg .cols pre{flex:1;min-height:0;max-height:none}
   #io{resize:none}
@@ -82,6 +85,17 @@
   .cols h4{margin:0 0 0.25rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
   #io{width:100%;margin-top:0.625rem;background:#20170f;color:var(--text);border:1px solid var(--line);border-radius:0.3125rem;padding:0.375rem;font:0.75rem monospace}
   @media(max-width:600px){.cols{grid-template-columns:1fr}.dbgbody{height:auto}.toolbar{flex-direction:column}.toolbar .right{width:auto;height:9rem}}
+  #cropOverlay{display:none;position:fixed;inset:0;z-index:20;background:rgba(10,7,4,.94);flex-direction:column;align-items:center;justify-content:center;gap:0.75rem;padding:1rem}
+  #cropOverlay.open{display:flex}
+  .cropWrap{position:relative;line-height:0;touch-action:none}
+  #cropCanvas{display:block;background:#000;border:1px solid var(--line)}
+  #cropBox{position:absolute;border:2px dashed var(--ok);background:rgba(143,209,138,.12);cursor:move;touch-action:none}
+  #cropBox .h{position:absolute;width:1.25rem;height:1.25rem;margin:-0.625rem;background:var(--ok);border:1px solid #1d1610;border-radius:50%;touch-action:none}
+  #cropBox .h.nw{left:0;top:0;cursor:nwse-resize}
+  #cropBox .h.ne{right:0;top:0;left:auto;cursor:nesw-resize}
+  #cropBox .h.sw{left:0;bottom:0;top:auto;cursor:nesw-resize}
+  #cropBox .h.se{right:0;bottom:0;left:auto;top:auto;cursor:nwse-resize}
+  .cropHint{color:var(--muted);font-size:0.8125rem;max-width:40rem;text-align:center;margin:0}
 </style>
 </head>
 <body>
@@ -99,6 +113,7 @@
   </div>
   <div class="row" style="margin-top:6px"><span class="lbl">Screenshot</span>
     <label class="btn" title="Load a screenshot of the puzzle to trace over">Load…<input id="file" type="file" accept="image/*" hidden></label>
+    <button id="recrop" title="Reopen the crop tool on your screenshot">Recrop…</button>
     <button id="bgshow" title="Show or hide the screenshot">Hide</button>
     <button id="bgtoggle" title="Make the lines translucent or fully visible">Lines: translucent</button>
   </div>
@@ -122,16 +137,16 @@
 <div id="guide">
   <button class="x" id="guideclose">Close</button>
   <h3>Puzzle still untouched?</h3>
-  <p>Click <b>Junior start</b> or <b>Senior start</b> (whichever difficulty you play) and then <b>Solve</b>. The pegs load at the game's original positions.</p>
+  <p>Click <b class="k">Junior start</b> or <b class="k">Senior start</b> (whichever difficulty you play) and then <b class="k">Solve</b>. The pegs load at the game's original positions.</p>
   <h3>Already moved the pegs? (most likely)</h3>
-  <p>The original layout can't be restored in the game, so rebuild your current board here:</p>
+  <p>The original layout can't be restored in the game, so rebuild your current board here. Your screenshot never leaves your browser — nothing is uploaded anywhere.</p>
   <ol>
     <li>In the game, drag the pegs apart so every line between them is easy to read, and take a screenshot.</li>
-    <li>Click <b>Screenshot…</b> and load your screenshot. (If you clicked <b>Junior start</b> or <b>Senior start</b> earlier, click <b>Clear</b> first to start from an empty board.)</li>
-    <li><b>Add peg</b>: click each peg on the screenshot.</li>
-    <li><b>Connect</b>: click two pegs to add a line between them, and repeat for every line. Click the same two again to undo. Use <b>Delete line</b> / <b>Delete peg</b> for mistakes, and <b>Lines</b> to make lines translucent so you can see the screenshot.</li>
-    <li>Open <b>Debug / export / import</b> below the board and check the counts: Junior has 15 pegs and 30 lines, Senior has 18 pegs and 43 lines.</li>
-    <li>Click <b>Solve</b>. Every peg that has to move turns green; pegs that stay grey don't move. Pick a green peg up at its <b>dashed circle</b> (where it is now) and drop it at the <b>green peg at the end of the arrow</b> (where it should go). Overwhelmed, or pegs overlap? Click <b>Step by step</b> at the bottom left of the board: it shows one move at a time, with the peg to move ringed in yellow and a green circle marking where to drop it. Use <b>▶</b> for the next move. Click <b>Stop</b> while searching to use the best result found so far.</li>
+    <li>Click <b class="k">Load…</b> (or paste with <b class="k">Ctrl+V</b>) and load your screenshot. A crop tool opens — drag the box over just the <b>playable</b> area (the pegs and lines), not the wooden frame border around them, then <b class="k">Use crop</b>. Including the frame border throws off where the solver thinks the pegs are. Use <b class="k">Recrop…</b> later to redo it without reloading. (If you clicked <b class="k">Junior start</b> or <b class="k">Senior start</b> earlier, click <b class="k">Clear</b> first to start from an empty board.)</li>
+    <li><b class="k">Add peg</b>: click each peg on the screenshot.</li>
+    <li><b class="k">Connect</b>: click two pegs to add a line between them, and repeat for every line. Click the same two again to undo. Use <b class="k">Delete line</b> / <b class="k">Delete peg</b> for mistakes, and <b class="k">Lines</b> to make lines translucent so you can see the screenshot.</li>
+    <li>Open <b class="k">Debug / export / import</b> below the board and check the counts: Junior has 15 pegs and 30 lines, Senior has 18 pegs and 43 lines.</li>
+    <li>Click <b class="k">Solve</b>. Every peg that has to move turns green; pegs that stay grey don't move. For each green peg, find it at its <b>dashed circle</b> (where it is now) and drag it, in the game, to the <b>green peg at the end of the arrow</b> (where it should go). Overwhelmed, or pegs overlap? Click <b class="k">Step by step</b> at the bottom left of the board: it shows one move at a time, with the peg to move ringed in yellow and a green circle marking where to drop it. Use <b class="k">▶</b> for the next move once you've made that move in the game. Click <b class="k">Stop</b> while searching to use the best result found so far.</li>
   </ol>
   <p>Peg numbers are just the order you added them, so they don't match anything in the game.</p>
 </div>
@@ -141,12 +156,14 @@
   <span id="stepLabel"></span>
   <button id="next" title="Next move">▶</button>
 </div>
+<div class="boardFrame" id="boardFrame">
 <svg id="board" width="800" height="440" viewBox="0 0 800 440"></svg>
+<div class="frameOverlay"></div>
+</div>
 </div>
 <details id="dbg" class="panel">
-  <summary>Debug / export / import</summary>
+  <summary>Debug / export / import<div id="stats"></div></summary>
   <div class="dbgbody">
-  <div id="stats"></div>
   <div class="cols">
     <div><h4>Coordinates</h4><pre id="coords"></pre></div>
     <div><h4>Connections</h4><pre id="adj"></pre></div>
@@ -157,6 +174,21 @@
   </div>
 </details>
 </main>
+<div id="cropOverlay">
+  <div class="cropWrap">
+    <canvas id="cropCanvas"></canvas>
+    <div id="cropBox">
+      <div class="h nw" data-h="nw"></div><div class="h ne" data-h="ne"></div><div class="h sw" data-h="sw"></div><div class="h se" data-h="se"></div>
+    </div>
+  </div>
+  <p class="cropHint">Drag the box over just the <b>playable</b> puzzle area — the pegs and lines, not the wooden frame border around them. Drag a corner to resize it. <b>Zoom in</b> re-renders the box's contents at full size so you can refine a tiny area further.</p>
+  <div class="row" style="justify-content:center">
+    <button id="cropZoom">Zoom in</button>
+    <button id="cropReset">Reset</button>
+    <button id="cropCancel" class="danger">Cancel</button>
+    <button id="cropUse" class="primary">Use crop</button>
+  </div>
+</div>
 <script>
 let W=800,H=440;
 const R=16,CLEAR=22,MINGAP=2*R+6;
@@ -170,7 +202,15 @@ let limits={pegs:18,bars:43,deg:8};
 const NS='http://www.w3.org/2000/svg';
 
 let pos=[], edges=[], userPos=null, movedSet=new Set(), ghosts=[], mode='move', sel=-1, bg=null, bgShown=true, linesFull=false, solving=false, sol=null, stepMode=false, stepIdx=0;
-const svg=document.getElementById('board'), status=document.getElementById('status'), movesEl=document.getElementById('moves');
+const svg=document.getElementById('board'), status=document.getElementById('status'), movesEl=document.getElementById('moves'), boardFrame=document.getElementById('boardFrame');
+function updateFrameGeom(){
+  // padding-top/bottom % is relative to container WIDTH, not height: convert the asset's
+  // own top/bottom fractions (of ITS height) into a fraction of the wrapper's rendered width,
+  // then correct for the wrapper's total size (content + padding) vs. the content (svg) size.
+  const r=H/W, corr=(1-0.105469)/(1-0.179191); // (1 - left-right frac sum) / (1 - top-bottom frac sum)
+  boardFrame.style.paddingTop=(9.0318*corr*r)+'%';
+  boardFrame.style.paddingBottom=(8.8873*corr*r)+'%';
+}
 
 function reset(){sol=null;stepMode=false;stepIdx=0;updateStepUI();movedSet.clear();ghosts=[];userPos=null;sel=-1;movesEl.textContent='';draw();}
 
@@ -218,6 +258,7 @@ function badEdgeSet(P){
 // draw
 function el(tag,attrs,parent=svg){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e;}
 function draw(){
+  updateFrameGeom();
   svg.innerHTML='';
   svg.setAttribute('class',mode=='delbar'?'delbar':mode=='delete'?'delpeg':'');
   if(bg&&bgShown)el('image',{href:bg,x:0,y:0,width:W,height:H,preserveAspectRatio:'xMidYMid meet'});
@@ -284,20 +325,107 @@ document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{
   mode=b.dataset.mode;sel=-1;document.getElementById('hint').textContent=HINTS[mode];
   document.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('on',x==b));draw();
 });
-document.getElementById('file').onchange=e=>{
-  const f=e.target.files[0];if(!f)return;
+function installBg(dataURL){
+  const im=new Image();
+  im.onload=()=>{
+    const nh=Math.round(800*im.naturalHeight/im.naturalWidth),k=nh/H;
+    pos=pos.map(p=>({x:p.x,y:p.y*k}));W=800;H=nh;
+    svg.setAttribute('height',H);svg.setAttribute('viewBox','0 0 '+W+' '+H);
+    bg=dataURL;bgShown=true;document.getElementById('bgshow').textContent='Hide';reset();
+  };
+  im.src=dataURL;
+}
+function readImageFile(f){
+  if(!f)return;
   const r=new FileReader();
-  r.onload=()=>{
-    const im=new Image();
-    im.onload=()=>{
-      const nh=Math.round(800*im.naturalHeight/im.naturalWidth),k=nh/H;
-      pos=pos.map(p=>({x:p.x,y:p.y*k}));W=800;H=nh;
-      svg.setAttribute('height',H);svg.setAttribute('viewBox','0 0 '+W+' '+H);
-      bg=r.result;bgShown=true;document.getElementById('bgshow').textContent='Hide';reset();
-    };
-    im.src=r.result;
-  };r.readAsDataURL(f);
+  r.onload=()=>{cropOrig=r.result;openCropper(cropOrig);};
+  r.readAsDataURL(f);
+}
+document.getElementById('file').onchange=e=>{
+  readImageFile(e.target.files[0]);
+  e.target.value='';
 };
+document.addEventListener('paste',e=>{
+  const items=e.clipboardData&&e.clipboardData.items;if(!items)return;
+  for(const it of items){
+    if(it.type&&it.type.startsWith('image/')){
+      readImageFile(it.getAsFile());
+      e.preventDefault();
+      break;
+    }
+  }
+});
+document.getElementById('recrop').onclick=()=>{if(cropOrig)openCropper(cropOrig);};
+
+// crop tool: pan/zoom-free box cropper, single-pointer only (touch-friendly)
+let cropOrig=null,cropImg=null,cropScale=1,cropRect=null,cropDrag=null;
+const cropCanvas=document.getElementById('cropCanvas'),cropBox=document.getElementById('cropBox'),cropOverlay=document.getElementById('cropOverlay');
+function loadImg(src){return new Promise(res=>{const im=new Image();im.onload=()=>res(im);im.src=src;});}
+function cropFit(img){
+  const maxW=Math.min(880,innerWidth-32),maxH=Math.min(560,innerHeight-180);
+  return Math.min(maxW/img.naturalWidth,maxH/img.naturalHeight,8);
+}
+function clampRect(r){
+  r.w=Math.max(20,Math.min(r.w,cropCanvas.width));
+  r.h=Math.max(20,Math.min(r.h,cropCanvas.height));
+  r.x=Math.max(0,Math.min(r.x,cropCanvas.width-r.w));
+  r.y=Math.max(0,Math.min(r.y,cropCanvas.height-r.h));
+  return r;
+}
+function renderCropBox(){
+  cropBox.style.left=cropRect.x+'px';cropBox.style.top=cropRect.y+'px';
+  cropBox.style.width=cropRect.w+'px';cropBox.style.height=cropRect.h+'px';
+}
+function defaultRect(){
+  cropRect=clampRect({x:0,y:0,w:cropCanvas.width,h:cropCanvas.height});
+}
+function paintStage(){
+  cropCanvas.width=Math.round(cropImg.naturalWidth*cropScale);
+  cropCanvas.height=Math.round(cropImg.naturalHeight*cropScale);
+  cropCanvas.getContext('2d').drawImage(cropImg,0,0,cropCanvas.width,cropCanvas.height);
+  defaultRect();renderCropBox();
+}
+async function openCropper(src){
+  cropImg=await loadImg(src);cropScale=cropFit(cropImg);paintStage();
+  cropOverlay.classList.add('open');
+}
+function cropExtract(){
+  const sx=cropRect.x/cropScale,sy=cropRect.y/cropScale,sw=cropRect.w/cropScale,sh=cropRect.h/cropScale;
+  const c=document.createElement('canvas');c.width=Math.max(1,Math.round(sw));c.height=Math.max(1,Math.round(sh));
+  c.getContext('2d').drawImage(cropImg,sx,sy,sw,sh,0,0,c.width,c.height);
+  return c.toDataURL('image/png');
+}
+document.getElementById('cropZoom').onclick=async()=>{
+  cropImg=await loadImg(cropExtract());cropScale=cropFit(cropImg);paintStage();
+};
+document.getElementById('cropReset').onclick=()=>{if(cropOrig)openCropper(cropOrig);};
+document.getElementById('cropCancel').onclick=()=>cropOverlay.classList.remove('open');
+document.getElementById('cropUse').onclick=()=>{
+  const dataURL=cropExtract();cropOverlay.classList.remove('open');installBg(dataURL);
+};
+function cropPt(e){const r=cropCanvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+[cropCanvas,cropBox,...cropBox.querySelectorAll('.h')].forEach(elx=>{
+  elx.addEventListener('pointerdown',e=>{
+    e.preventDefault();
+    const p=cropPt(e),h=e.target.dataset.h;
+    cropDrag={mode:h||(e.target===cropBox?'move':'new'),ox:p.x,oy:p.y,r:{...cropRect}};
+    if(cropDrag.mode=='new')cropRect=clampRect({x:p.x,y:p.y,w:1,h:1});
+    elx.setPointerCapture(e.pointerId);
+  });
+});
+window.addEventListener('pointermove',e=>{
+  if(!cropDrag)return;
+  const p=cropPt(e),dx=p.x-cropDrag.ox,dy=p.y-cropDrag.oy,r0=cropDrag.r;
+  let r;
+  if(cropDrag.mode=='move')r={x:r0.x+dx,y:r0.y+dy,w:r0.w,h:r0.h};
+  else if(cropDrag.mode=='new')r={x:Math.min(cropDrag.ox,p.x),y:Math.min(cropDrag.oy,p.y),w:Math.abs(dx),h:Math.abs(dy)};
+  else if(cropDrag.mode=='nw')r={x:r0.x+dx,y:r0.y+dy,w:r0.w-dx,h:r0.h-dy};
+  else if(cropDrag.mode=='ne')r={x:r0.x,y:r0.y+dy,w:r0.w+dx,h:r0.h-dy};
+  else if(cropDrag.mode=='sw')r={x:r0.x+dx,y:r0.y,w:r0.w-dx,h:r0.h+dy};
+  else r={x:r0.x,y:r0.y,w:r0.w+dx,h:r0.h+dy};
+  cropRect=clampRect(r);renderCropBox();
+});
+window.addEventListener('pointerup',()=>{cropDrag=null;});
 document.getElementById('bgshow').onclick=e=>{
   bgShown=!bgShown;e.target.textContent=bgShown?'Hide':'Show';draw();
 };
